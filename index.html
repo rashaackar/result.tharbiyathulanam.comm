@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Public Examination Result</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+
+*{box-sizing:border-box;}
+
+html,body{
+margin:0;
+padding:0;
+overflow-x:hidden;
+font-family:'Segoe UI',Arial,sans-serif;
+background:linear-gradient(to bottom,#eef2f7,#dbe6f6);
+}
+
+.container{
+width:100%;
+max-width:500px;
+margin:auto;
+padding:15px;
+}
+
+.logo{
+text-align:center;
+margin-bottom:10px;
+}
+
+.logo img{
+width:100%;
+max-width:320px;
+display:block;
+margin:auto;
+}
+
+.search-box{
+background:white;
+padding:20px;
+border-radius:18px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+input,select{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:12px;
+border:1px solid #ddd;
+font-size:14px;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:15px;
+background:linear-gradient(45deg,#0d5ea6,#1fb5b5);
+color:white;
+border:none;
+border-radius:12px;
+font-size:15px;
+cursor:pointer;
+}
+
+.result-card{
+background:white;
+border-radius:20px;
+padding:20px;
+box-shadow:0 15px 35px rgba(0,0,0,0.1);
+margin-top:15px;
+}
+
+.student-box{
+background:linear-gradient(45deg,#0d5ea6,#1fb5b5);
+padding:15px;
+border-radius:15px;
+text-align:center;
+color:white;
+}
+
+.badge{
+background:rgba(255,255,255,0.2);
+padding:6px;
+margin:5px 0;
+border-radius:8px;
+font-weight:bold;
+font-size:13px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+font-size:14px;
+}
+
+th,td{
+border-bottom:1px solid #ddd;
+padding:8px;
+text-align:center;
+}
+
+th{
+background:#f1f6ff;
+}
+
+.total-row{
+background:#0d5ea6;
+color:white;
+font-weight:bold;
+}
+
+.final{
+padding:12px;
+text-align:center;
+font-size:18px;
+font-weight:bold;
+margin-top:15px;
+border-radius:12px;
+}
+
+.pass{
+background:linear-gradient(45deg,#1b8f3a,#2ecc71);
+color:white;
+}
+
+.fail{
+background:linear-gradient(45deg,#b5122f,#ff4d6d);
+color:white;
+}
+
+.moderation{
+background:linear-gradient(45deg,#d68910,#f4d03f);
+color:white;
+}
+
+.back-btn{
+background:#444;
+}
+
+.footer{
+text-align:center;
+padding:12px;
+font-size:13px;
+color:#555;
+}
+
+.footer strong{
+color:#0d5ea6;
+}
+
+.hide{
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="logo" id="logoArea">
+<img src="madrasa-logo.png">
+</div>
+
+<div id="searchBox" class="search-box">
+
+<select id="std">
+<option value="">Select Standard</option>
+<option value="1">Class 1</option>
+<option value="2">Class 2</option>
+<option value="3">Class 3</option>
+<option value="4">Class 4</option>
+<option value="6">Class 6</option>
+<option value="8">Class 8</option>
+<option value="9">Class 9</option>
+<option value="11">Class 11</option>
+</select>
+
+<input type="text" id="adm" placeholder="Enter Admission Number">
+
+<button onclick="showResult()">Get Result</button>
+
+</div>
+
+<div id="result"></div>
+
+</div>
+
+<div class="footer">
+Developed by <strong>SKSSF Media Wing Palyathadka Unit</strong>
+</div>
+
+<script>
+
+let students=[];
+
+fetch("students.xlsx")
+.then(res=>res.arrayBuffer())
+.then(data=>{
+
+let workbook=XLSX.read(data);
+
+workbook.SheetNames.forEach(sheetName=>{
+
+let sheet=workbook.Sheets[sheetName];
+
+let rows=XLSX.utils.sheet_to_json(sheet);
+
+rows.forEach(r=>{
+
+let subjects=[];
+
+Object.keys(r).forEach(key=>{
+
+if(key.startsWith("sub") && r[key]){
+
+let num=key.replace("sub","");
+
+let m=r["mark"+num];
+
+if(m==="A" || m==="a"){
+subjects.push([r[key],"A"]);
+}else{
+subjects.push([r[key],Number(m||0)]);
+}
+
+}
+
+});
+
+students.push({
+
+adm:String(r.adm).trim(),
+class:String(r.class).trim(),
+name:r.name,
+subjects:subjects
+
+});
+
+});
+
+});
+
+});
+
+function showResult(){
+
+let adm=document.getElementById("adm").value.trim();
+let std=document.getElementById("std").value;
+let box=document.getElementById("result");
+
+let st=students.find(s=>s.adm==adm && s.class==std);
+
+if(!st){
+
+box.innerHTML="<div class='result-card'>Result not found</div>";
+return;
+
+}
+
+document.getElementById("searchBox").style.display="none";
+
+let total=0;
+let pass=true;
+let moderation=false;
+let rows="";
+
+st.subjects.forEach(s=>{
+
+if(s[1]==="A"){
+
+rows+=`<tr><td>${s[0]}</td><td>Absent</td></tr>`;
+moderation=true;
+
+}else{
+
+total+=s[1];
+
+if(s[1]<18) pass=false;
+
+rows+=`<tr><td>${s[0]}</td><td>${s[1]} / 50</td></tr>`;
+
+}
+
+});
+
+let max=st.subjects.length*50;
+
+let resultText="";
+let resultClass="";
+
+if(moderation){
+resultText="MODERATION";
+resultClass="moderation";
+}else if(pass){
+resultText="PASS";
+resultClass="pass";
+}else{
+resultText="FAIL";
+resultClass="fail";
+}
+
+box.innerHTML=`
+
+<div class="result-card" id="resultCard">
+
+<div class="student-box">
+
+<h3>${st.name}</h3>
+
+<div class="badge">Class : ${st.class} - Tarbiyathul Anam Madrasa Palyathadka</div>
+
+<div class="badge">Admission No : ${st.adm}</div>
+
+</div>
+
+<table>
+
+<tr>
+<th>Subject</th>
+<th>Marks</th>
+</tr>
+
+${rows}
+
+<tr class="total-row">
+<td>Total / Maximum</td>
+<td>${total} / ${max}</td>
+</tr>
+
+</table>
+
+<div class="final ${resultClass}">
+${resultText}
+</div>
+
+<button id="downloadBtn" onclick="downloadImage()">Download Result</button>
+
+<button id="searchBtn" class="back-btn" onclick="location.reload()">
+Search Another Result
+</button>
+
+</div>
+
+`;
+
+}
+
+function downloadImage(){
+
+document.getElementById("downloadBtn").classList.add("hide");
+document.getElementById("searchBtn").classList.add("hide");
+
+html2canvas(document.body).then(canvas=>{
+
+let link=document.createElement("a");
+link.download="result.png";
+link.href=canvas.toDataURL();
+link.click();
+
+document.getElementById("downloadBtn").classList.remove("hide");
+document.getElementById("searchBtn").classList.remove("hide");
+
+});
+
+}
+
+</script>
+
+</body>
+</html>

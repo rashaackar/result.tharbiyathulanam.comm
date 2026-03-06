@@ -12,12 +12,17 @@
 
 *{box-sizing:border-box;}
 
-html,body{
+html{
+scroll-behavior:smooth;
+}
+
+body{
 margin:0;
 padding:0;
 overflow-x:hidden;
 font-family:'Segoe UI',Arial,sans-serif;
 background:linear-gradient(to bottom,#eef2f7,#dbe6f6);
+-webkit-overflow-scrolling:touch;
 }
 
 .container{
@@ -43,7 +48,7 @@ margin:auto;
 background:white;
 padding:20px;
 border-radius:18px;
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
 }
 
 input,select{
@@ -71,8 +76,10 @@ cursor:pointer;
 background:white;
 border-radius:20px;
 padding:20px;
-box-shadow:0 15px 35px rgba(0,0,0,0.1);
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
 margin-top:15px;
+transform:translateZ(0);
+will-change:transform;
 }
 
 .student-box{
@@ -97,6 +104,7 @@ width:100%;
 border-collapse:collapse;
 margin-top:15px;
 font-size:14px;
+table-layout:fixed;
 }
 
 th,td{
@@ -351,6 +359,8 @@ Search Another Result
 
 `;
 
+window.scrollTo({top:0,behavior:"smooth"});
+
 }
 
 function downloadImage(){
@@ -358,7 +368,7 @@ function downloadImage(){
 document.getElementById("downloadBtn").classList.add("hide");
 document.getElementById("searchBtn").classList.add("hide");
 
-html2canvas(document.body).then(canvas=>{
+html2canvas(document.getElementById("resultCard")).then(canvas=>{
 
 let link=document.createElement("a");
 link.download="result.png";
